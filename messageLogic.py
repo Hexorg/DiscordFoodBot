@@ -7,41 +7,38 @@ class BotCommand:
     def __init__(self, logic):
         self._logic = logic
 
-    def __call__(self, args):
-        print(args)
+    def __call__(self):
+        print('{} is called'.format(self.__class__.__name__))
 
 
 class HelpCMD(BotCommand):
     '''Prints docstring of all registered commands'''
-    def __call__(self, args):
+    def __call__(self):
         cmds = self._logic.commands
         return self._logic.__doc__ + '\nAvailable commands:\n' + \
             '\n'.join(['\t**{}{}**: {}'.format(self._logic.command_key, cmd, cmds[cmd].__doc__) for cmd in cmds])
 
 class ForgetCMD(BotCommand):
     '''Remove last newly-added restaurant'''
-    def __call__(self, args):
-        if isinstance(args, database.VotingDB):
-            args.forgetLast()
-            return 'Now I remember {} entries'.format(len(args.voting_set))
-        else:
-            raise TypeError("expecting VotingDB, but got {}".format(args.__class__.__name__))
+    def __call__(self):
+        url = self._logic.database.forgetLast()
+        if url:
+            return '{} has been removed from the database'.format(url)
 
 class VoteCMD(BotCommand):
     '''Output this week's restaurant selection'''
-    def __call__(self, args):
-        return '\n'.join(s for s in args.prepareForVote())
+    def __call__(self):
+        return '\n'.join(s for s in self._logic.database.prepareForVote())
 
-class ClearCMD(BotCommand):
-    '''Remove all saved restaurants'''
-    def __call__(self, args):
-        l = len(args.voting_set)
-        args.voting_set = set()
-        return "Removed {} entries".format(l)
+class VoteEndCMD(BotCommand):
+    '''Tally up the votes and tell us where we are going'''
+    def __call__(self):
+        pass
+
 
 class SizeCMD(BotCommand):
     '''Check how many URLs are stored'''
-    def __call__(self, args):
+    def __call__(self):
         return '{} entries'.format(len(args.voting_set))
 
 class Logic:
@@ -49,13 +46,15 @@ class Logic:
     url_re = re.compile('(http|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?')
     command_key = '!'
 
-    def __init__(self, name):
+    def __init__(self, name, guildId):
+        self.database = database.VotingDB(guildId)
         self.commands = {'help': HelpCMD(self), \
                             'vote': VoteCMD(self), \
-                            'clear': ClearCMD(self), \
+                            'endvote': VoteEndCMD(self), \
                             'size': SizeCMD(self), \
                             'forget': ForgetCMD(self)}
         self.__changelog = ChangeLog()
+        
         self.name = name
 
     def should_listen(self, channel):
@@ -76,13 +75,17 @@ class Logic:
                 return True
         return False
 
-    def restaurant_url_from_message(self, message):
-        ''' Get Google Maps url from message containing a restaurant reference '''
+    def add(self, message):
+        ''' Add a restaurant reference '''
         urls = self.url_re.finditer(message)
         for urlgroups in urls:
             url = urlgroups.group()
             if 'maps' in url and 'goo' in url:
-                return url
+                isAddedNew = self.__database.add(url)
+                if isAddedNew:
+                    return "New restaurant added."
+                else:
+                    return "This restaurant is already in the database"
 
     def is_command(self, message):
         ''' Returns true or false of message is a formal bot command '''

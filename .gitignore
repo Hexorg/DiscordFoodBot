@@ -1,6 +1,7 @@
 # Project-specific
 # Discord token file
 token
+.announce
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
