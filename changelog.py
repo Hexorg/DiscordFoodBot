@@ -14,12 +14,16 @@ class ChangeLog:
             with open(self.last_announce_file, 'r') as f:
                 limit_commit = f.read().strip()
         
-        log = self.__repo.head.log()
-        pos = len(log)-1
-        while pos > 0 and log[pos].newhexsha != limit_commit:
-            if log[pos].message.startswith('commit:'):
-                self.__announce += '+ ' + log[pos].message[8:] + '\n'
-            pos -= 1
+        pos = 0
+        commit = self.__repo.commit('HEAD')
+        while commit.hexsha != limit_commit:
+            if not commit.message.startswith('Merge'):
+                self.__announce += '+ ' + commit.message
+            pos += 1
+            try:
+                commit = self.__repo.commit('HEAD~{}'.format(pos))
+            except Exception as e:
+                break
         
         with open(self.last_announce_file, 'w') as f:
             f.write(str(self.get_commit()))
