@@ -7,16 +7,26 @@ bot = commands.Bot(command_prefix='$', description='Test bot')
 databases = {}
 logics = {}
 
+def init_new_server(guild, bot):
+    print('Detected new server - {} (ID: {})'.format(guild.name, guild.id))
+    databases[guild.id] = VotingDB()
+    logics[guild.id] = messageLogic.Logic(bot.user.name)
+
 @bot.event
 async def on_ready():
     print("Logged in as {} ({})".format(bot.user.name, bot.user.id))
+    for guild in bot.guilds:
+        if guild.id not in databases:
+            init_new_server(guild, bot)
+        for channel in guild.text_channels:
+            if logics[guild.id].should_listen(channel.name):
+                await channel.send(logics[guild.id].announce_self())
+        
 
 @bot.event
 async def on_message(message):
     if message.guild.id not in databases:
-        print('Detected new server - {} (ID: {})'.format(message.guild.name, message.guild.id))
-        databases[message.guild.id] = VotingDB()
-        logics[message.guild.id] = messageLogic.Logic()
+        init_new_server(message.guild, bot)
     db = databases[message.guild.id]
     logic = logics[message.guild.id]
     if logic.should_listen(message.channel.name):

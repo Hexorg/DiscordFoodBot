@@ -1,5 +1,6 @@
 import re
 import database
+from changelog import ChangeLog
 
 class BotCommand:
     '''Base Bot command. Just dumps command arguments to stdout.'''
@@ -48,16 +49,23 @@ class Logic:
     url_re = re.compile('(http|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?')
     command_key = '!'
 
-    def __init__(self):
+    def __init__(self, name):
         self.commands = {'help': HelpCMD(self), \
                             'vote': VoteCMD(self), \
                             'clear': ClearCMD(self), \
                             'size': SizeCMD(self), \
                             'forget': ForgetCMD(self)}
+        self.__changelog = ChangeLog()
+        self.name = name
 
     def should_listen(self, channel):
         ''' Returns true or false, if bot should listen on this channel '''
         return channel == 'dinner-organization'
+    
+    def announce_self(self):
+        return "Greetings! New {} is up! From commit {}.\nLatest changes:\n{}\nAs usual, for new feature requests, add issues to {}".format( \
+            self.name, str(self.__changelog.get_commit())[:7], self.__changelog.get_latest_changes(), \
+            self.__changelog.get_remote())
 
     def is_restaurant(self, message):
         ''' Returns true or false if message contains a restaurant reference '''
