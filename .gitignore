@@ -2,6 +2,7 @@
 # Discord token file
 token
 .announce
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

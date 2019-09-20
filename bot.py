@@ -22,15 +22,18 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     logic = logics[message.guild.id]
-    if logic.should_listen(message.channel.name):
+    if logic.should_listen(message.channel.name) and message.author != bot.user:
         if logic.is_restaurant(message.content):
             response = logic.add(message.content)
-            if response:   
-                await message.channel.send(response)
         if logic.is_command(message.content):
             command = logic.command_from_message(message.content)
             response = command()
-            if response:
+        
+        if response:
+            if isinstance(response, list):
+                for msg in response:
+                    await message.channel.send(msg)
+            else:
                 await message.channel.send(response)
 
 token=''

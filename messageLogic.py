@@ -28,7 +28,7 @@ class ForgetCMD(BotCommand):
 class VoteCMD(BotCommand):
     '''Output this week's restaurant selection'''
     def __call__(self):
-        return '\n'.join(s for s in self._logic.database.prepareForVote())
+        return [s for s in self._logic.database.prepareForVote()]
 
 class VoteEndCMD(BotCommand):
     '''Tally up the votes and tell us where we are going'''
@@ -81,7 +81,7 @@ class Logic:
         for urlgroups in urls:
             url = urlgroups.group()
             if 'maps' in url and 'goo' in url:
-                isAddedNew = self.__database.add(url)
+                isAddedNew = self.database.add(url)
                 if isAddedNew:
                     return "New restaurant added."
                 else:

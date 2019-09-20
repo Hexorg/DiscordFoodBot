@@ -22,6 +22,8 @@ class VotingDB:
         if url not in self.__urls:
             self.__urls.append(url)
             self.__last_entry = url
+            with open(self.__db_file, 'w') as fp:
+                json.dump(self.__data, fp)
             return True
         else:
             return False
@@ -36,7 +38,7 @@ class VotingDB:
     def prepareForVote(self):
         voting_list = []
         max_len = ord('z')-ord('a')
-        if len(self.__urls) > max_len):
+        if len(self.__urls) > max_len:
             voting_list = self.__urls[:max_len]
         else:
             voting_list = self.__urls
